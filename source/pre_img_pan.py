@@ -31,10 +31,6 @@ import numpy as np
 from scipy.ndimage.filters import rank_filter
 from dateutil.parser import parse
 
-
-
-
-
 def dilate(ary, N, iterations): 
 	"""Dilate using an NxN '+' sign shape. ary is np.uint8."""
 	
@@ -272,8 +268,6 @@ def preprocess_image(path):
 		print('%s -> (no text!)' % path)
 		return
 
-	
-
 	crop = find_optimal_components_subset(contours, edges)
 	crop = pad_crop(crop, contours, edges, border_contour)
 
@@ -288,8 +282,6 @@ def preprocess_image(path):
 	# text_im.show()
 	return text_im
 
-
-
 def empty():
 	data = {}
 	data['Name'] = 'Not found'
@@ -297,8 +289,6 @@ def empty():
 	data['PAN'] = 'Not found'
 	data['Date of Birth'] = 'Not found'
 	return data
-
-
 
 class MyImage:
 	def __init__(self, img_name):
@@ -310,7 +300,6 @@ class MyImage:
 
 def process_image_pan(url=None,path=None):
 
-
 #	image = _get_image(url)
 	if url != None:
 		image = url_to_image(url)
@@ -319,27 +308,19 @@ def process_image_pan(url=None,path=None):
 	else:
 		return "Wrong Wrong Wrong, What are you doing ??? "
 
-
 	im_pil = Image.fromarray(image.img)
 	im_preprocessed = preprocess_image(im_pil)
 
 	im_np = np.asarray(im_preprocessed)
 	gray = cv2.cvtColor(im_np,cv2.COLOR_BGR2GRAY)
 
-
-
 	# gray = cv2.cvtColor(image.img,cv2.COLOR_BGR2GRAY)
-
-
-
 	print ("Recognizing...")
 
 	text =  pytesseract.image_to_string(gray,lang = 'eng')
 	if text is None:
 		data = empty()
 		return data
-
-
 	name = None
 	fname = None
 	dob = None
@@ -356,7 +337,6 @@ def process_image_pan(url=None,path=None):
 	text = ftfy.fix_text(text)
 	text = ftfy.fix_encoding(text)
 
-
 	lines = text.split('\n')
 	for lin in lines:
 		s = lin.strip()
@@ -366,9 +346,7 @@ def process_image_pan(url=None,path=None):
 		text1.append(s)
 
 	text1 = list(filter(None, text1))
-
 	lineno = -1  
-
 	for wordline in text1:
 		xx = wordline.split('\n')
 		if ([w for w in xx if re.search(incOM_str, w)]):
@@ -410,7 +388,6 @@ def process_image_pan(url=None,path=None):
 		text2.append(text2[0])
 		text2.append(text2[1])
 
-
 	data = {}
 	data['Name'] = text2[0]
 	data['Father Name'] = text2[1]
@@ -418,9 +395,6 @@ def process_image_pan(url=None,path=None):
 		data['Date of Birth'] = get_DOB(text2)
 	else:
 		data['Date of Birth'] = text2[2]
-
-
-
 
 	def findword(textlist, wordstring):
 		lineno = -1
@@ -432,7 +406,6 @@ def process_image_pan(url=None,path=None):
 				return textlist
 		return textlist
 
-
 	text3 = findword(text2, '(Pormanam|Number|umber|Account|ccount|count|Permanent|ermanent|manent|wumm|Per#ianent Account Number|Perdfighent Account Number|Penfianent Account Number)$')
 	# data['PAN'] = text3[0]
 	if len(text3)>0:
@@ -440,15 +413,9 @@ def process_image_pan(url=None,path=None):
 	else:
 		data['PAN'] = 'Not Found'
 
-
-
 	data['Name'] = re.sub('[\W_]+', ' ', data['Name'])
 	data['Father Name'] = re.sub('[\W_]+', ' ', data['Father Name'])
 	data['PAN'] = re.sub('[\W_]+', ' ', data['PAN'])
-	# print(len(text3))
-
-	print(data['Date of Birth'])
-	
 
 	def isValid(Z):
 		Result=re.compile("[A-Za-z]{5}\d{4}[A-Za-z]{1}")
@@ -466,8 +433,6 @@ def process_image_pan(url=None,path=None):
 		data['PAN'] = 'Not Found'
 
 
-
-
 	if len(data['Name'])<3:
 		data['Name'] = 'Not Found'
 
@@ -475,24 +440,15 @@ def process_image_pan(url=None,path=None):
 		data['Father Name'] = 'Not Found'
 
 
-
-
-
-
-
 	if all(x.isalpha() or x.isspace() for x in data['Father Name']):
 		None
-
 	else:
 		data['Name'] = 'Not Found'
-
 
 	if all(x.isalpha() or x.isspace() for x in data['Father Name']):
 		None
 	else:
 		data['Father Name'] = 'Not Found'
-
-
 
 	def remove_garbage_from_Date(test_string):
 		bad_chars = [';', ':', '!', "*", '@', '$', '%', '^', '&']
@@ -514,17 +470,14 @@ def process_image_pan(url=None,path=None):
 	else:
 		data['Date of Birth'] = 'Not Found'
 
-
 	try:
 		to_unicode = unicode
 	except NameError:
 		to_unicode = str
 
-
 	with io.open(str(image) + '_data' +'.json', 'w', encoding='utf-8') as outfile:
 		str_ = json.dumps(data, indent=4, sort_keys=True, separators=(',', ': '), ensure_ascii=False)
 		outfile.write(to_unicode(str_))
-
 
 	print ("the result is {}".format(data))
 	return data

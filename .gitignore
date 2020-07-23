@@ -1,9 +1,13 @@
 error.log
 
+
+
 *.so
 
 #virtualenv
 env
+
+/source/__pycache__/*.pyc
 
 # Packages
 *.egg

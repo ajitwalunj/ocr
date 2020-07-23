@@ -5,8 +5,8 @@ from logging import Formatter, FileHandler
 from flask import Flask, request, jsonify, render_template,redirect,make_response,url_for
 from werkzeug.utils import secure_filename
 from source.pre_img_pan import process_image_pan
-from source.pre_img_aadhar_front import process_image_aadhar_front
-from source.pre_img_aadhar_back import process_image_aadhar_back
+from source.pre_img_aadhar import process_image_aadhar_front
+from source.pre_img_aadhar import process_image_aadhar_back
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 UPLOAD_FOLDER = './uploads'

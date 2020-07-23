@@ -18,7 +18,6 @@ import os
 import os.path
 import json
 import sys
-
 import glob
 import os
 import random
@@ -27,15 +26,10 @@ import random
 import math
 import json
 from collections import defaultdict
-
 from PIL import Image, ImageDraw
 import numpy as np
 from scipy.ndimage.filters import rank_filter
 from dateutil.parser import parse
-
-
-
-
 
 def dilate(ary, N, iterations): 
     """Dilate using an NxN '+' sign shape. ary is np.uint8."""
@@ -49,7 +43,6 @@ def dilate(ary, N, iterations):
     kernel[:,(N-1)//2] = 1  # Bug solved with // (integer division)
     dilated_image = cv2.dilate(dilated_image, kernel, iterations=iterations)
     return dilated_image
-
 
 def props_for_contours(contours, ary):
     """Calculate bounding box & the number of set pixels for each contour."""
@@ -67,24 +60,20 @@ def props_for_contours(contours, ary):
         })
     return c_info
 
-
 def union_crops(crop1, crop2):
     """Union two (x1, y1, x2, y2) rects."""
     x11, y11, x21, y21 = crop1
     x12, y12, x22, y22 = crop2
     return min(x11, x12), min(y11, y12), max(x21, x22), max(y21, y22)
 
-
 def intersect_crops(crop1, crop2):
     x11, y11, x21, y21 = crop1
     x12, y12, x22, y22 = crop2
     return max(x11, x12), max(y11, y12), min(x21, x22), min(y21, y22)
 
-
 def crop_area(crop):
     x1, y1, x2, y2 = crop
     return max(0, x2 - x1) * max(0, y2 - y1)
-
 
 def find_border_components(contours, ary):
     borders = []
@@ -95,10 +84,8 @@ def find_border_components(contours, ary):
             borders.append((i, x, y, x + w - 1, y + h - 1))
     return borders
 
-
 def angle_from_right(deg):
     return min(deg % 90, 90 - (deg % 90))
-
 
 def remove_border(contour, ary):
     """Remove everything outside a border contour."""
@@ -120,7 +107,6 @@ def remove_border(contour, ary):
 
     return np.minimum(c_im, ary)
 
-
 def find_components(edges, max_components=16):
     """Dilate the image until there are just a few connected components.
     Returns contours for these components."""
@@ -138,7 +124,6 @@ def find_components(edges, max_components=16):
         count = len(contours)
 
     return contours
-
 
 def find_optimal_components_subset(contours, edges):
     """Find a crop which strikes a good balance of coverage/compactness.
@@ -191,7 +176,6 @@ def find_optimal_components_subset(contours, edges):
 
     return crop
 
-
 def pad_crop(crop, contours, edges, border_contour, pad_px=15):
     """Slightly expand the crop to get full contours.
     This will expand to include any contours it currently intersects, but will
@@ -229,7 +213,6 @@ def pad_crop(crop, contours, edges, border_contour, pad_px=15):
     else:
         return crop
 
-
 def downscale_image(im, max_dim=2048):
     """Shrink im until its longest dimension is <= max_dim.
     Returns new_image, scale (where scale <= 1).
@@ -241,7 +224,6 @@ def downscale_image(im, max_dim=2048):
     scale = 1.0 * max_dim / max(a, b)
     new_im = im.resize((int(a * scale), int(b * scale)), Image.ANTIALIAS)
     return scale, new_im
-
 
 def preprocess_image(path):
 
@@ -262,7 +244,6 @@ def preprocess_image(path):
         edges = remove_border(border_contour, edges)
 
     edges = 255 * (edges > 0).astype(np.uint8)
-
     # Remove ~1px borders using a rank filter.
     maxed_rows = rank_filter(edges, -4, size=(1, 20))
     maxed_cols = rank_filter(edges, -4, size=(20, 1))
@@ -272,9 +253,7 @@ def preprocess_image(path):
     contours = find_components(edges)
     if len(contours) == 0:
         print('%s -> (no text!)' % path)
-        return
-
-    
+        return 
 
     crop = find_optimal_components_subset(contours, edges)
     crop = pad_crop(crop, contours, edges, border_contour)
@@ -285,18 +264,18 @@ def preprocess_image(path):
     c_info = props_for_contours(contours, edges)
     for c in c_info:
         this_crop = c['x1'], c['y1'], c['x2'], c['y2']
-        # draw.rectangle(this_crop, outline='blue')
+
     text_im = orig_im.crop(crop)
     # text_im.show()
     return text_im
 
 def empty():
-    data={}
-    data['Address']=Address
-    data['District'] = district
-    data['State'] = state
-    data['Pincode'] = pincode
-
+    data = {}
+    data['Name'] = 'Not found'
+    data['Gender'] = 'Not found'
+    data['Uid'] = 'Not found'
+    data['Date of Birth'] = 'Not found'
+    return data
 
 class MyImage:
     def __init__(self, img_name):
@@ -306,7 +285,7 @@ class MyImage:
     def __str__(self):
         return self.__name
 
-def process_image_aadhar_back(url=None,path=None):
+def process_image_aadhar_front(url=None,path=None):
     #image = _get_image(url)
     if url != None:
     	image = url_to_image(url)
@@ -314,6 +293,187 @@ def process_image_aadhar_back(url=None,path=None):
     	image = MyImage(path)
     else:
     	return "Wrong Wrong Wrong, What are you doing ??? "
+
+    im_pil = Image.fromarray(image.img)
+    im_preprocessed = preprocess_image(im_pil)
+    im_np = np.asarray(im_preprocessed)
+    gray = cv2.cvtColor(im_np,cv2.COLOR_BGR2GRAY)
+
+
+    # gray = cv2.cvtColor(image.img,cv2.COLOR_BGR2GRAY)
+       #print ("Recognizing...")
+    text=pytesseract.image_to_string(gray)
+
+    if text is None:
+        data = empty()
+        return data
+
+    name = None
+    gender = None
+    ayear = None
+    uid = None
+    yearline = []
+    genline = []
+    nameline = []
+    text0 = []
+    text1 = []
+    text2 = []
+
+    lines=text
+
+    text = text.replace("B:", "B: ")
+
+    # Searching for Year of Birth
+    lines = text
+    #print(lines)
+    for wordlist in lines.split('\n'):
+        xx = wordlist.split()
+        if [w for w in xx if re.search('(Year|Birth|DOB;|> 0B :|00B:|YOB:|DOB:|DOB|DO8:|DO8|D08:|DOR:)$', w)]:
+            yearline = wordlist
+            break
+        else:
+            text1.append(wordlist)
+    try:
+        text2 = text.split(yearline, 1)[1]
+    except Exception:
+        pass
+
+    try:
+        yearline = re.split('Year|Birth|Birth |0B :|Birth:|00B:|YoB|DOB :|DOB:|DOB|DO8:|DO8 |D08:|DOR:', yearline)[1:]
+        yearline = ''.join(str(e) for e in yearline)
+        if(yearline):
+            ayear = dparser.parse(yearline,fuzzy=True).year
+    except:
+        pass
+
+    lineno = 0  # to start from the first line of the text file.
+
+    for wordline in text1:
+        xx = wordline.split('\n')
+        if ([w for w in xx if re.search('(Government of India|vernment of India|overnment of India|ernment of India|India|GOVT|GOVERNMENT|OVERNMENT|VERNMENT|GOVERNMENT OF INDIA|OVERNMENT OF INDIA|INDIA|NDIA)$', w)]):
+            text1 = list(text1)
+            lineno = text1.index(wordline)
+            break
+
+    text0 = text1[lineno+1:]
+
+    try:
+        for wordlist in lines.split('\n'):
+            xx = wordlist.split( )
+            if ([w for w in xx if re.search('(Female|Male|emale|male|ale|FEMALE|MALE|EMALE)$', w)]):
+                genline = wordlist
+                break
+                
+        if 'Male' in genline or 'MALE' in genline:
+            gender = "Male"
+
+        if 'Female' in genline or 'FEMALE' in genline:
+            gender = "Female"
+        
+        text2 = text.split(genline,1)[1]
+
+    except:
+        pass
+
+    text3= re.sub('\D', ' ', text2) #remove every character except numbers
+    text3=text3.replace(" ","")
+    text3=text3.replace("  ","")
+    text3=text3.replace("   ","")
+    text3=text3.replace("    ","")
+    text3=text3.replace("     ","")
+    text3[0:12]
+    no=text3[0:12]
+    no = no[0:4] + " " + no[4:8] +" " + no[8:12]
+
+    while("" in text0) : 
+        text0.remove("") 
+    while(" " in text0) : 
+        text0.remove(" ") 
+    while("  " in text0) : 
+        text0.remove("  ") 
+    while("   " in text0) : 
+        text0.remove("   ") 
+
+    name=text0[len(text0)-1]
+    name = name.replace('|', "")
+    name = name.replace('©)', "")
+    name = name.replace('-',"")
+    name = name.replace("1",'')
+
+    if(len(no) < 10):
+        no = "Not Found"
+    else:
+        no = no
+
+
+    if(len(name) < 4):
+        name = "Not Found"
+    else:
+        name = name
+
+
+    if(len(gender)<4):
+        gender = "Not Found"
+    else:
+        gender = gender
+
+    if(len(yearline)<10):
+        yearline = "Not Found"
+    else:
+        yearline = yearline
+
+    data = {}
+    data['Name'] = name
+    data['Gender'] = gender
+    data['Date of Birth'] = yearline
+    data['Uid']=no
+
+    data['Name'] = re.sub('[\W_]+', ' ', data['Name'])
+    data['Gender'] = re.sub('[\W_]+', ' ', data['Gender'])
+    data['Uid'] = re.sub('[\W_]+', ' ', data['Uid'])
+
+
+    def remove_garbage_from_Date(test_string):
+        bad_chars = [';', ':', '!', "*", '@', '$', '%', '^', '&']
+        for i in bad_chars :
+            test_string = test_string.replace(i, '')
+            return test_string
+
+    def is_date(string, fuzzy=False):
+        try:
+            parse(string, fuzzy=fuzzy)
+            return True
+        except ValueError:
+            return False
+
+    data['Date of Birth'] = remove_garbage_from_Date(data['Date of Birth'])
+
+    if(is_date(data['Date of Birth'])):
+        None
+    else:
+        data['Date of Birth'] = 'Not Found'
+
+    try:
+            to_unicode = unicode
+    except NameError:
+            to_unicode = str
+
+    with io.open(str(image) + '_data' +'.json', 'w', encoding='utf-8') as outfile:
+            str_ = json.dumps(data, indent=4, sort_keys=True, separators=(',', ': '), ensure_ascii=False)
+            outfile.write(to_unicode(str_))
+
+    print ("the result is {}".format(data))
+    return data
+
+
+def process_image_aadhar_back(url=None,path=None):
+    #image = _get_image(url)
+    if url != None:
+        image = url_to_image(url)
+    elif path != None:
+        image = MyImage(path)
+    else:
+        return "Wrong Wrong Wrong, What are you doing ??? "
 
 
     im_pil = Image.fromarray(image.img)
@@ -423,7 +583,6 @@ def process_image_aadhar_back(url=None,path=None):
     else:
         pincode = pincode
 
-
     data={}
     #data['Address_Line_1']=Address_Line_1
     data['Address']=Address
@@ -431,28 +590,17 @@ def process_image_aadhar_back(url=None,path=None):
     data['State'] = state
     data['Pincode'] = pincode
 
-
     try:
             to_unicode = unicode
     except NameError:
             to_unicode = str
 
-
     with io.open(str(image) + '_data' +'.json', 'w', encoding='utf-8') as outfile:
             str_ = json.dumps(data, indent=4, sort_keys=True, separators=(',', ': '), ensure_ascii=False)
             outfile.write(to_unicode(str_))
-
-
 
     print ("the result is {}".format(data))
     return data
 
 
-def url_to_image(url):
-    resp = urllib.urlopen(url)
-    image = np.asarray(bytearray(resp.read()), dtype="uint8")
-    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-    return image
-
-
-
+	
