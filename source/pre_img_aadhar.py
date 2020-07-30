@@ -11,7 +11,7 @@ import csv
 import dateutil.parser as dparser
 from PIL import Image
 import matplotlib.pyplot as plt
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 import ftfy
 import matplotlib.pyplot as plt
 import os
