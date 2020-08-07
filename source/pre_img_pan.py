@@ -308,13 +308,13 @@ def process_image_pan(url=None,path=None):
 	else:
 		return "Wrong Wrong Wrong, What are you doing ??? "
 
-	im_pil = Image.fromarray(image.img)
-	im_preprocessed = preprocess_image(im_pil)
+	# im_pil = Image.fromarray(image.img)
+	# im_preprocessed = preprocess_image(im_pil)
 
-	im_np = np.asarray(im_preprocessed)
-	gray = cv2.cvtColor(im_np,cv2.COLOR_BGR2GRAY)
+	# im_np = np.asarray(im_preprocessed)
+	# gray = cv2.cvtColor(im_np,cv2.COLOR_BGR2GRAY)
 
-	# gray = cv2.cvtColor(image.img,cv2.COLOR_BGR2GRAY)
+	gray = cv2.cvtColor(image.img,cv2.COLOR_BGR2GRAY)
 	print ("Recognizing...")
 
 	text =  pytesseract.image_to_string(gray,lang = 'eng')
